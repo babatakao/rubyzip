@@ -85,6 +85,8 @@ module Zip
 
     # Closes the current entry and opens a new for writing.
     # +entry+ can be a ZipEntry object or a string.
+    # Passing "false" to "extra" has a special meaning: zip64 extra field
+    # placeholder won't be created regardless of write_zip64_support.
     def put_next_entry(entry_name, comment = nil, extra = nil, compression_method = Entry::DEFLATED, level = Zip.default_compression)
       raise Error, 'zip stream is closed' if @closed
       new_entry = if entry_name.kind_of?(Entry)
@@ -93,7 +95,9 @@ module Zip
                     Entry.new(@file_name, entry_name.to_s)
                   end
       new_entry.comment = comment unless comment.nil?
-      unless extra.nil?
+      if extra == false
+        new_entry.prohibit_extra = true
+      elsif !extra.nil?
         new_entry.extra = extra.is_a?(ExtraField) ? extra : ExtraField.new(extra.to_s)
       end
       new_entry.compression_method = compression_method unless compression_method.nil?
